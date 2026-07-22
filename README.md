@@ -20,7 +20,7 @@ la explica con SHAP, y simula escenarios de política con un modelo SEIR.
 - Escenario restricciones bajas: +109.738 infectados vs base
 
 ## 🚀 Demo
-[Enlace a la app en Streamlit Cloud] 
+https://epidemiologia-explicable-covid19-jkq4jkvbsqg6djpax2cl48.streamlit.app/ 
 
 ## 🛠️ Stack
 Python · scikit-learn · XGBoost · SHAP · Streamlit · Plotly
