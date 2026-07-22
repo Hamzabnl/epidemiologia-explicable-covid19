@@ -1541,39 +1541,111 @@ if shap_available and shap_values is not None:
     info_box(t("sec5_info"))
 
     available_dates = sorted(test_df["date"].dt.date.unique())
-    sel_date = st.select_slider(t("select_date"), options=available_dates,
-                                value=available_dates[len(available_dates)//2])
+    sel_date = st.select_slider(
+        t("select_date"),
+        options=available_dates,
+        value=available_dates[len(available_dates)//2]
+    )
 
     idx_list = test_df.index[test_df["date"].dt.date == sel_date].tolist()
+
     if not idx_list:
         warn_box(t("no_data_for_date"))
+
     else:
         row_pos = test_df.index.get_loc(idx_list[0])
-        row     = test_df.iloc[row_pos]
+        row = test_df.iloc[row_pos]
+
         c_meta, c_wf = st.columns([1, 2])
 
         with c_meta:
             bv, pv = row["beta"], row["beta_pred"]
-            trend  = t("growing") if bv > 1/7 else t("declining")
-            metric_card(t("metric_date"),       str(sel_date), t("metric_selected_day"))
-            metric_card(t("metric_real_beta"),     f"{bv:.4f}",   trend)
-            metric_card(t("metric_predicted_beta"),f"{pv:.4f}",   t("metric_error", err=abs(bv-pv)))
-            st.markdown(f"<p style='color:{C['pred']};font-size:0.78rem;font-weight:600;margin:0.7rem 0 0.3rem 0;'>{t('values_this_day')}</p>", unsafe_allow_html=True)
+
+            trend = t("growing") if bv > 1/7 else t("declining")
+
+            metric_card(
+                t("metric_date"),
+                str(sel_date),
+                t("metric_selected_day")
+            )
+
+            metric_card(
+                t("metric_real_beta"),
+                f"{bv:.4f}",
+                trend
+            )
+
+            metric_card(
+                t("metric_predicted_beta"),
+                f"{pv:.4f}",
+                t("metric_error", err=abs(bv-pv))
+            )
+
+            st.markdown(
+                f"<p style='color:{C['pred']};font-size:0.78rem;font-weight:600;margin:0.7rem 0 0.3rem 0;'>"
+                f"{t('values_this_day')}</p>",
+                unsafe_allow_html=True
+            )
+
             for f in FEATURES:
-                st.markdown(f"<small style='color:{C['muted']};'>{FEAT_LABELS[f]}: <b style='color:{C['text']};'>{row[f]:.2f}</b></small>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<small style='color:{C['muted']};'>"
+                    f"{FEAT_LABELS[f]}: "
+                    f"<b style='color:{C['text']};'>{row[f]:.2f}</b>"
+                    f"</small>",
+                    unsafe_allow_html=True
+                )
+
 
         with c_wf:
+
             plt.style.use("default")
-            fig_wf = plt.figure(figsize=(8, max(3.5, len(FEATURES)*0.7)))
+
+            fig_wf = plt.figure(
+                figsize=(8, max(3.5, len(FEATURES)*0.7))
+            )
+
             fig_wf.patch.set_facecolor("#FFFFFF")
-            shap.plots.waterfall(shap.Explanation(
-                values=shap_values[row_pos], base_values=explainer.expected_value,
-                data=X_test.iloc[row_pos],
-                feature_names=[FEAT_LABELS.get(f,f) for f in FEATURES]), show=False)
-            plt.tight_layout(); st.image(shap_fig_to_bytes(), use_container_width=True)
+
+
+            # ─────────────────────────────────────────────
+            # Compatibilidad SHAP local / Streamlit Cloud
+            # ─────────────────────────────────────────────
+
+            # Algunas versiones de SHAP devuelven lista
+            if isinstance(shap_values, list):
+                shap_values = shap_values[0]
+
+
+            # Algunas versiones devuelven ndarray en expected_value
+            base_value = explainer.expected_value
+
+            if isinstance(base_value, np.ndarray):
+                base_value = base_value.flatten()[0]
+
+
+            shap.plots.waterfall(
+                shap.Explanation(
+                    values=shap_values[row_pos],
+                    base_values=base_value,
+                    data=X_test.iloc[row_pos],
+                    feature_names=[
+                        FEAT_LABELS.get(f, f)
+                        for f in FEATURES
+                    ]
+                ),
+                show=False
+            )
+
+
+            plt.tight_layout()
+
+            st.image(
+                shap_fig_to_bytes(),
+                use_container_width=True
+            )
 
     hr()
-
 # ─────────────────────────────────────────────────────────────────────────────
 # SECCIÓN 6 — Simulador de Políticas
 # ─────────────────────────────────────────────────────────────────────────────
