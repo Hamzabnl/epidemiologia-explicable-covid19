@@ -1660,43 +1660,140 @@ slider_cols  = st.columns(cols_per_row)
 user_vals    = {}
 
 for i, feat in enumerate(FEATURES):
+
     lo, hi, step = FEAT_RANGES[feat]
     med = float(X_test[feat].median())
+
     with slider_cols[i % cols_per_row]:
-        st.markdown(f"<small style='color:{C['pred']};font-weight:600;'>{ALL_FEATURES_META[feat]['icon']} {FEAT_LABELS[feat]}</small>", unsafe_allow_html=True)
-        user_vals[feat] = st.slider(feat, float(lo), float(hi),
+
+        st.markdown(
+            f"<small style='color:{C['pred']};font-weight:600;'>"
+            f"{ALL_FEATURES_META[feat]['icon']} {FEAT_LABELS[feat]}"
+            f"</small>",
+            unsafe_allow_html=True
+        )
+
+        user_vals[feat] = st.slider(
+            feat,
+            float(lo),
+            float(hi),
             float(round(med/step)*step) if step else float(med),
-            float(step), label_visibility="collapsed")
+            float(step),
+            label_visibility="collapsed"
+        )
+
     if (i+1) % cols_per_row == 0 and (i+1) < n_feats:
         slider_cols = st.columns(cols_per_row)
 
-X_user    = pd.DataFrame([user_vals], columns=FEATURES)
+
+
+X_user = pd.DataFrame(
+    [user_vals],
+    columns=FEATURES
+)
+
 beta_user = float(model.predict(X_user)[0])
 beta_mean = float(y_pred.mean())
-thresh    = 1 / 7
+thresh = 1 / 7
+
+
 
 c1r, c2r, c3r = st.columns(3)
-with c1r: metric_card(t("metric_predicted_beta_scenario"), f"{beta_user:.4f}", t("metric_custom_scenario"))
+
+with c1r:
+    metric_card(
+        t("metric_predicted_beta_scenario"),
+        f"{beta_user:.4f}",
+        t("metric_custom_scenario")
+    )
+
+
 with c2r:
-    if beta_user > thresh: metric_card(t("metric_epidemic_status"), t("growing"),   f"β > {thresh:.3f}")
-    else:                  metric_card(t("metric_epidemic_status"), t("declining"), f"β ≤ {thresh:.3f}")
+
+    if beta_user > thresh:
+
+        metric_card(
+            t("metric_epidemic_status"),
+            t("growing"),
+            f"β > {thresh:.3f}"
+        )
+
+    else:
+
+        metric_card(
+            t("metric_epidemic_status"),
+            t("declining"),
+            f"β ≤ {thresh:.3f}"
+        )
+
+
 with c3r:
-    chg  = ((beta_user - beta_mean) / beta_mean) * 100
+
+    chg = ((beta_user - beta_mean) / beta_mean) * 100
     sign = "+" if chg >= 0 else ""
-    metric_card(t("metric_vs_historical"), f"{sign}{chg:.1f}%", t("metric_avg_beta", beta=beta_mean))
+
+    metric_card(
+        t("metric_vs_historical"),
+        f"{sign}{chg:.1f}%",
+        t("metric_avg_beta", beta=beta_mean)
+    )
+
+
+
+# ───────────────────────────────────────────────
+# SHAP waterfall para escenario personalizado
+# Compatibilidad Streamlit Cloud
+# ───────────────────────────────────────────────
 
 if shap_available and explainer is not None:
+
     shap_user = explainer.shap_values(X_user)
+
+
+    # Compatibilidad entre versiones SHAP
+    if isinstance(shap_user, list):
+        shap_user = shap_user[0]
+
+
+    base_value = explainer.expected_value
+
+    if isinstance(base_value, np.ndarray):
+        base_value = base_value.flatten()[0]
+
+
     plt.style.use("default")
-    fig_u = plt.figure(figsize=(8, max(3.5, n_feats*0.7)))
+
+    fig_u = plt.figure(
+        figsize=(8, max(3.5, n_feats*0.7))
+    )
+
     fig_u.patch.set_facecolor("#FFFFFF")
-    shap.plots.waterfall(shap.Explanation(
-        values=shap_user[0], base_values=explainer.expected_value,
-        data=X_user.iloc[0], feature_names=[FEAT_LABELS[f] for f in FEATURES]), show=False)
-    plt.tight_layout(); st.image(shap_fig_to_bytes(), caption=t("shap_caption_scenario"), use_container_width=True)
+
+
+    shap.plots.waterfall(
+        shap.Explanation(
+            values=shap_user[0],
+            base_values=base_value,
+            data=X_user.iloc[0],
+            feature_names=[
+                FEAT_LABELS[f]
+                for f in FEATURES
+            ]
+        ),
+        show=False
+    )
+
+
+    plt.tight_layout()
+
+    st.image(
+        shap_fig_to_bytes(),
+        caption=t("shap_caption_scenario"),
+        use_container_width=True
+    )
+
 
 hr()
-
 # ─────────────────────────────────────────────────────────────────────────────
 # SECCIÓN 7 — Comparación de Escenarios SEIR
 # -----------------------------------------------------------------------------
