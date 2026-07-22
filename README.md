@@ -107,7 +107,7 @@ El SEIR parametrizado con β predicho por ML se ajusta mucho mejor a la realidad
 
 ## 🚀 Demo en vivo
 
-👉 **[Probar la aplicación]([https://TU-APP.streamlit.app](https://epidemiologia-explicable-covid19-jioqoctudgkuvoovfrpdat.streamlit.app/))** 
+👉 **[Probar la aplicación](https://TU-APP.streamlit.app](https://epidemiologia-explicable-covid19-jioqoctudgkuvoovfrpdat.streamlit.app/)** 
 
 ## ⚙️ Ejecución local
 
